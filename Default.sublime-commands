@@ -1,0 +1,6 @@
+[
+	{
+        "caption": "ClojureDocs: Search",
+        "command": "pg_clojure_docs_search"
+    }
+]
