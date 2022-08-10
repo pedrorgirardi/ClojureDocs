@@ -3,6 +3,7 @@ import sublime_plugin
 
 import json
 import pathlib
+import random
 
 
 def hl(length=80):
@@ -21,7 +22,9 @@ class PgClojureDocsSearchCommand(sublime_plugin.WindowCommand):
         try:
 
             with open(
-                pathlib.PurePath(sublime.packages_path(), "ClojureDocs", "clojuredocs.json")
+                pathlib.PurePath(
+                    sublime.packages_path(), "ClojureDocs", "clojuredocs.json"
+                )
             ) as file:
                 clojuredocs = json.load(file)
 
@@ -98,3 +101,78 @@ class PgClojureDocsSearchCommand(sublime_plugin.WindowCommand):
             quick_panel_items,
             on_done,
         )
+
+
+class PgClojureDocsTodaysPickCommand(sublime_plugin.WindowCommand):
+    """
+    Command to show today's pick.
+    """
+
+    def run(self):
+        clojuredocs = None
+
+        try:
+
+            with open(
+                pathlib.PurePath(
+                    sublime.packages_path(), "ClojureDocs", "clojuredocs.json"
+                )
+            ) as file:
+                clojuredocs = json.load(file)
+
+        except:
+            clojuredocs = {}
+
+        quick_panel_items = []
+
+        todays_pick_index = random.randrange(0, len(clojuredocs.get("vars")) - 1)
+
+        todays_pick = clojuredocs.get("vars")[todays_pick_index]
+
+        var_name = todays_pick.get("ns") + "/" + todays_pick.get("name") + " "
+
+        arglists = ["[" + arg + "]" for arg in todays_pick.get("arglists", [])]
+        arglists = " ".join(arglists)
+        arglists = arglists + "\n;;\n" if arglists else ""
+
+        docstring = todays_pick.get("doc") if todays_pick.get("doc") else ""
+        docstring = "\n".join([";; " + line for line in docstring.split("\n")])
+
+        examples = todays_pick.get("examples") or []
+        examples = [example.get("body") for example in examples if example.get("body")]
+        examples = "\n\n".join(examples)
+
+        see_alsos = todays_pick.get("see-alsos") or []
+        see_alsos = [
+            ";; " + see_also["to-var"]["ns"] + "/" + see_also["to-var"]["name"]
+            for see_also in see_alsos
+        ]
+        see_alsos = "\n".join(see_alsos)
+
+        content = ";; " + var_name
+        content = content + arglists
+        content = content + docstring
+        content = content + "\n" + hl() + "\n\n"
+        content = content + examples
+
+        if see_alsos:
+            content = content + "\n\n\n" + hl() + "\n\n"
+            content = content + ";; See also:\n;;\n"
+            content = content + see_alsos
+
+        view = self.window.new_file()
+        view.set_name("Today in Clojure - " + var_name)
+        view.set_scratch(True)
+        view.set_read_only(False)
+        view.assign_syntax("scope:source.clojure")
+        view.settings().set("line_numbers", False)
+        view.settings().set("gutter", False)
+        view.settings().set("is_widget", False)
+        view.settings().set("pep_ignore", True)
+        view.run_command(
+            "append",
+            {
+                "characters": content,
+            },
+        )
+        view.set_read_only(True)

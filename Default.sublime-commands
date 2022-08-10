@@ -2,5 +2,10 @@
 	{
         "caption": "ClojureDocs: Search",
         "command": "pg_clojure_docs_search"
+    },
+
+    {
+        "caption": "ClojureDocs: Today's Pick",
+        "command": "pg_clojure_docs_todays_pick"
     }
 ]
